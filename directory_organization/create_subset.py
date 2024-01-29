@@ -60,6 +60,7 @@ def copy_files(data_folder, subset_data_folder, desired_sensors):
         for filename in filenames:
             if any(ending in filename for ending in ['.jpg', '.png', '.jpeg', '.pneg']) \
                     and get_sensor(filename) in desired_sensors:
+                # AY: sensors might play a role?
                 rel_dir = os.path.relpath(dirpath, data_folder)
                 rel_file = os.path.join(rel_dir, filename)
                 

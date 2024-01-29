@@ -137,7 +137,8 @@ class MultipleFingerDataset(Dataset):
         self.train_anchor_indices = list()
         # ignore scale factor, since pos and neg are randomized every time
         for i in range(len(self.the_data)):
-            if self.get_fgrp_from_index(i) in self.acceptable_anchor_fgrps:
+            # AY: self.acceptable_anchor_fgrps is set manually as a constant at the top.
+            if True: # self.get_fgrp_from_index(i) in self.acceptable_anchor_fgrps:
                 self.train_anchor_indices.append(i)
         return
 

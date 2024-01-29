@@ -40,8 +40,11 @@ def main(args, cuda):
         diff_fingers_across_sets=args.diff_fingers_across_sets_train, diff_fingers_within_set=True,\
         diff_sensors_across_sets=args.diff_sensors_across_sets_train, same_sensor_within_set=True, \
         acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
+    print(len(training_dataset))
     #training_dataset = torch.utils.data.Subset(training_dataset, list(range(0, len(training_dataset), 50)))
     train_dataloader = DataLoader(training_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
+    print(len(train_dataloader))
+    return
 
     val_dataset = MultipleFingerDataset(fingerprint_dataset=FingerprintDataset(val_dir_paths, train=False),\
         num_anchor_fingers=1, num_pos_fingers=1, num_neg_fingers=1,\
