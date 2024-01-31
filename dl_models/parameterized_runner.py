@@ -8,6 +8,7 @@ import os
 import json
 import math
 import getopt, argparse
+import latent.latent_util as latent_util
 
 sys.path.append('../')
 
@@ -15,7 +16,6 @@ from trainer import *
 from fingerprint_dataset import FingerprintDataset
 from multiple_finger_datasets import *
 from embedding_models import *
-import matplotlib.pyplot as plt # KK: for visualizations
 from common_filepaths import *
 
 import wandb
@@ -41,10 +41,19 @@ def main(args, cuda):
         diff_sensors_across_sets=args.diff_sensors_across_sets_train, same_sensor_within_set=True, \
         acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
     print(len(training_dataset))
+
+    # for i in range(min(len(training_dataset), 5)):  # Adjust the range as needed
+    #     images, labels, file_paths = training_dataset[i]
+    #     # Images, labels, and file_paths are tuples of (anchor, pos, neg)
+    #     print(f"Sample {i+1}:")
     #training_dataset = torch.utils.data.Subset(training_dataset, list(range(0, len(training_dataset), 50)))
+    
     train_dataloader = DataLoader(training_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
     print(len(train_dataloader))
-    return
+
+    # for batch_idx, (images, labels, file_paths) in enumerate(train_dataloader):
+    #     print(f"Batch {batch_idx+1}/{len(train_dataloader)}")
+    # latent_util.plot_and_save_ldr("train", train_dataloader)
 
     val_dataset = MultipleFingerDataset(fingerprint_dataset=FingerprintDataset(val_dir_paths, train=False),\
         num_anchor_fingers=1, num_pos_fingers=1, num_neg_fingers=1,\
@@ -54,22 +63,6 @@ def main(args, cuda):
         acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
     #val_dataset = torch.utils.data.Subset(val_dataset, list(range(0, len(val_dataset), 5)))
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
-
-
-
-
-    
-    # KK: The following lines are used for dataloader visualizations, comment out if not needed
-    def plot_and_save_ldr(ldr_name, ldr):
-        imgs, ids, fngr_nums = next(iter(ldr))
-        plt.imshow(imgs[0].squeeze(), cmap='gray') 
-        plt.title(f'ID: {ids[0]}, Finger: {fngr_nums[0]}')
-        os.makedirs('test', exist_ok=True)
-        # should save to dl_models/test
-        plt.savefig(f'test/{ldr_name}_ID_{ids[0]}_Finger_{fngr_nums[0]}.png')
-
-    plot_and_save_ldr("train", train_dataloader)
-    plot_and_save_ldr("val", val_dataloader)
     
 
     # CLEAR CUDA MEMORY

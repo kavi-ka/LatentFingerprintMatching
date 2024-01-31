@@ -17,7 +17,7 @@ CUDA_VISIBLE_DEVICES=$2 python3 parameterized_runner.py \
     --datasets "${SD302_latent}" \
     --val-datasets "${SD302} ${SD300} ${RIDGEBASE}" \
     --posttrained-model-path $BASED_WEIGHTS \
-    --temp_model_dir 'temp_weights' --results_dir "$1/results" \
+    --temp_model_dir '../temp_weights' --results_dir "$1/results" \
     --diff-fingers-across-sets-train --diff-sensors-across-sets-train --diff-fingers-across-sets-val --diff-sensors-across-sets-val \
     --scale-factor 1 --log-interval 100
 

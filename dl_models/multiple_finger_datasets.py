@@ -36,6 +36,7 @@ class SquarePad:
 # returns the image as a normalized square with standard size
 def my_transformation(the_image, train=False, target_image_size=(224, 224)):
     #print(target_image_size)
+    print("used")
     assert target_image_size[0] == target_image_size[1]
     fill_val = 255 if the_image[0, 0, 0] > 200 else 0
     # common transforms - these are the only transforms for test
