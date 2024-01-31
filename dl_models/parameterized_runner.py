@@ -15,7 +15,7 @@ from trainer import *
 from fingerprint_dataset import FingerprintDataset
 from multiple_finger_datasets import *
 from embedding_models import *
-
+import matplotlib.pyplot as plt # KK: for visualizations
 from common_filepaths import *
 
 import wandb
@@ -54,6 +54,23 @@ def main(args, cuda):
         acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
     #val_dataset = torch.utils.data.Subset(val_dataset, list(range(0, len(val_dataset), 5)))
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
+
+
+
+
+    
+    # KK: The following lines are used for dataloader visualizations, comment out if not needed
+    def plot_and_save_ldr(ldr_name, ldr):
+        imgs, ids, fngr_nums = next(iter(ldr))
+        plt.imshow(imgs[0].squeeze(), cmap='gray') 
+        plt.title(f'ID: {ids[0]}, Finger: {fngr_nums[0]}')
+        os.makedirs('test', exist_ok=True)
+        # should save to dl_models/test
+        plt.savefig(f'test/{ldr_name}_ID_{ids[0]}_Finger_{fngr_nums[0]}.png')
+
+    plot_and_save_ldr("train", train_dataloader)
+    plot_and_save_ldr("val", val_dataloader)
+    
 
     # CLEAR CUDA MEMORY
     # https://stackoverflow.com/questions/54374935/how-to-fix-this-strange-error-runtimeerror-cuda-error-out-of-memory
