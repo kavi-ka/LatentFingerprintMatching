@@ -108,7 +108,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, met
     individual_loss_fn = nn.TripletMarginLoss(margin=loss_fn.margin, reduction='none')
     # individual losses
 
-    for batch_idx, (data, target, filepaths) in enumerate(train_loader):      
+    for batch_idx, (data, target, filepaths) in enumerate(train_loader):   
         print("read in image filepaths:", filepaths)
 
         target = None #target if len(target) > 0 else None
@@ -172,6 +172,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, met
             print(message)
             losses = []
             n_nonzero_losses = 0
+        print("ran one epoch...!!!!!")
 
     total_loss /= (batch_idx + 1)
     return total_loss, metrics

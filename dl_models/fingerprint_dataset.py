@@ -57,6 +57,9 @@ class FingerprintDataset(Dataset):
         if self.train:
             self.train_labels = self.img_labels
             self.train_data = self.images
+            print("dataset...")
+            print(self.train_labels)
+            print(self.train_data)
         else: # test
             self.test_labels = self.img_labels
             self.test_data = self.images
@@ -64,7 +67,6 @@ class FingerprintDataset(Dataset):
         self.pil2tensor = transforms.Compose([
             transforms.PILToTensor()
         ]) # for .bmp images
-
         return
 
     def __len__(self):

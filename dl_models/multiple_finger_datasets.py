@@ -43,7 +43,7 @@ class SquarePad:
 # returns the image as a normalized square with standard size
 def my_transformation(the_image, train=False, target_image_size=(224, 224)):
     #print(target_image_size)
-    # print("used")
+    print("start tramsformation...")
     assert target_image_size[0] == target_image_size[1]
     fill_val = 255 if the_image[0, 0, 0] > 200 else 0
     # common transforms - these are the only transforms for test
@@ -65,8 +65,11 @@ def my_transformation(the_image, train=False, target_image_size=(224, 224)):
         shadeScaling = 1 + 0.3 * (torch.rand(1).item() - 0.5) # shade scaling between 0.85 and 1.15
         noise = 0.1 * torch.max(the_image) * (torch.rand(target_image_size) - 0.5)
         the_image = shadeScaling * (the_image + noise)
+        print("finished transform...")
         return the_image
-    return transform(the_image.float())
+    transform_ret = transform(the_image.float())
+    print("finished transform...")
+    return 
 
 
 def convert_image_to_8bit(image_path):
@@ -77,12 +80,15 @@ def convert_image_to_8bit(image_path):
     print("saved..")
 
 def my_read_image(x):
+    print("reading..", x)
     # convert_image_to_8bit(x)
     # my_read_image_and_save(x, save_dir='images')
     if '.bmp' in x:
         pil2tensor = transforms.Compose([transforms.PILToTensor()]) # for .bmp images
         return pil2tensor(Image.open(x).convert('RGB'))
-    return read_image(x, mode=ImageReadMode.RGB)
+    read_image_ret = read_image(x, mode=ImageReadMode.RGB)
+    print("finished reading...")
+    return read_image_ret
 
 def my_read_image_and_save(x, save_dir='/path/to/save/images'):
     # Define the filename for the saved image
@@ -319,7 +325,11 @@ class MultipleFingerDataset(Dataset):
                     break # satisfy (10) - same dataset as anchors
             the_size = self.num_neg_fingers
         
+        # print("anchor indices: {}".format(anchor_indices))
+        # print(the_label)
+        # print(the_size)
         while len(ret_val) < the_size:
+            # print("hanging?")
             # satisfy (0) - same class as each other
             curr_index = self.random_state.choice(self.label_to_indices[the_label])
             """
@@ -355,6 +365,8 @@ class MultipleFingerDataset(Dataset):
             ret_val.append(curr_index) # satisfy (4) - distinct samples than each other
             retVal_fgrps.add(curr_fgrp) # satisfy (6) - different fingers than each other (optionally)
             retVal_sensors.add(curr_sensor) # satisfy (8) - same sensor as each other (optionally)
+            # print("ret_val is...")
+            # print(len(ret_val))
 
         # (0) definitely same class as each other
         assert len(set([self.the_labels[x] for x in ret_val])) == 1
@@ -429,6 +441,7 @@ class MultipleFingerDataset(Dataset):
     def get_item_train(self, index):
         anchor_filepath = self.the_data[self.train_anchor_indices[index]]
         anchor_img = my_transformation(my_read_image(anchor_filepath), train=self.train)
+        print("1. entering get_item_train with index: {}".format(index))
         curr_pos_indices = self.get_indices(anchor_indices=[self.train_anchor_indices[index]],\
                         same_class_as_anchor=True, \
                         diff_fingers_across_sets=self.diff_fingers_across_sets,\
@@ -439,6 +452,7 @@ class MultipleFingerDataset(Dataset):
         assert len(curr_pos_indices) == 1
         pos_filepath = self.the_data[curr_pos_indices[0]]
         pos_img = my_transformation(my_read_image(pos_filepath), train=self.train)
+        print("2. entering get_item_train with index: {}".format(index))
         curr_neg_indices = self.get_indices(anchor_indices=[self.train_anchor_indices[index]],\
                         same_class_as_anchor=False, \
                         diff_fingers_across_sets=self.diff_fingers_across_sets,\
