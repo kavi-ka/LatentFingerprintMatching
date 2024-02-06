@@ -5,8 +5,8 @@ import numpy as np
 from PIL import Image
 
 # Define the source and target directories
-source_dir = '/data/albert/latent_302/org_data/'
-base_dir = '/data/albert/latent_302/latent_8bit'
+source_dir = '/data/albert/latent_302/org_data/png'
+base_dir = '/data/albert/latent_302/latent_8bit_toy'
 
 # Ensure the existence of target directories for train, test, and val
 for split in ['train', 'test', 'val']:
@@ -43,8 +43,12 @@ def move_subfolders(subfolders, target_dir):
                 image_path = os.path.join(target_path, filename)
                 convert_image_to_8bit(image_path)
                 print("converted to 8-bit:", image_path)
+        
+        if toy:
+            break
 
 # Move the subfolders to their respective new directories
+toy = False
 move_subfolders(train, os.path.join(base_dir, 'train'))
 move_subfolders(test, os.path.join(base_dir, 'test'))
 move_subfolders(val, os.path.join(base_dir, 'val'))

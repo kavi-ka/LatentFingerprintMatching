@@ -2,7 +2,10 @@
 # Purpose: to train our cross-finger recognition model, without pretraining
 
 SD302='/data/therealgabeguo/fingerprint_data/sd302_split'
+
 SD302_latent='/data/albert/latent_302/latent_8bit'
+SD302_latent_toy='/data/albert/latent_302/latent_8bit_toy'
+
 SD301='/data/therealgabeguo/fingerprint_data/sd301_split'
 SD300='/data/therealgabeguo/fingerprint_data/sd300a_split'
 RIDGEBASE='/data/therealgabeguo/fingerprint_data/RidgeBase_Split'
@@ -14,7 +17,7 @@ GENERAL_CORRELATION_FOLDER="$PROVING_CORRELATION_FOLDER/general"
 # Training base model
 ######
 CUDA_VISIBLE_DEVICES=$2 python3 parameterized_runner.py \
-    --datasets "${SD302_latent}" \
+    --datasets "${SD302_latent_toy}" \
     --val-datasets "${SD302} ${SD300} ${RIDGEBASE}" \
     --posttrained-model-path $BASED_WEIGHTS \
     --temp_model_dir '../temp_weights' --results_dir "$1/results" \

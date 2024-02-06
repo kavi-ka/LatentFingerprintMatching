@@ -1,0 +1,7 @@
+Copt data
+
+cp -R -v /data/therealgabeguo/fingerprint_data/latent_fingerprints/sd302e/latent/png/ /data/albert/latent_302/org_data/
+
+
+Run script
+bash run_base_model_no_pretrain.sh ../latent-output 4
