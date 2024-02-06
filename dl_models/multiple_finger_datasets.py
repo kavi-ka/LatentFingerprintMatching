@@ -1,3 +1,10 @@
+import matplotlib.pyplot as plt
+from torchvision.io import read_image, ImageReadMode
+from torchvision import transforms
+from PIL import Image
+import os
+
+
 import numpy as np
 from PIL import Image
 
@@ -62,10 +69,28 @@ def my_transformation(the_image, train=False, target_image_size=(224, 224)):
     return transform(the_image.float())
 
 def my_read_image(x):
+    print("reading...", x)
+    my_read_image_and_save(x, save_dir='images')
     if '.bmp' in x:
         pil2tensor = transforms.Compose([transforms.PILToTensor()]) # for .bmp images
         return pil2tensor(Image.open(x).convert('RGB'))
     return read_image(x, mode=ImageReadMode.RGB)
+
+def my_read_image_and_save(x, save_dir='/path/to/save/images'):
+    # Define the filename for the saved image
+    save_filename = os.path.basename(x)
+    # Define the full path to save the image
+    save_path = os.path.join(save_dir, save_filename)
+    
+    # Read the image using torchvision's read_image
+    image_tensor = read_image(x, mode=ImageReadMode.RGB)
+    
+    # Save the image to the specified directory
+    print("huhhh")
+    save_image(image_tensor.float() / 255, save_path)  # Normalize tensor values to [0, 1] for saving
+    
+    print(f"Image saved to {save_path}")
+    return image_tensor
 
 class MultipleFingerDataset(Dataset):
     """

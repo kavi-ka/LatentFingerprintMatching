@@ -31,18 +31,18 @@ folder_names=("sd300_full" "sd301_full" "sd302_full")
 # Array of scale factors
 scale_factors=(2 4 4) # SD300 has many more images, so need less scaling
 
-for ((i=0; i<${#datasets[@]}; ++i)); do
-    # Finger correlation
-    python3 parameterized_multiple_finger_tester.py \
-        --dataset ${datasets[i]} \
-        --weights $BASED_WEIGHTS \
-        --cuda "cuda:$2" \
-        --num_fingers 1 \
-        --output_root "${GENERAL_CORRELATION_FOLDER}"/${folder_names[i]} \
-        --scale_factor ${scale_factors[i]} \
-        --diff_fingers_across_sets \
-        --diff_fingers_within_set \
-        --diff_sensors_across_sets \
-        --same_sensor_within_set
-    # Only cross-finger testing!
-done
+# for ((i=0; i<${#datasets[@]}; ++i)); do
+#     # Finger correlation
+#     python3 parameterized_multiple_finger_tester.py \
+#         --dataset ${datasets[i]} \
+#         --weights $BASED_WEIGHTS \
+#         --cuda "cuda:$2" \
+#         --num_fingers 1 \
+#         --output_root "${GENERAL_CORRELATION_FOLDER}"/${folder_names[i]} \
+#         --scale_factor ${scale_factors[i]} \
+#         --diff_fingers_across_sets \
+#         --diff_fingers_within_set \
+#         --diff_sensors_across_sets \
+#         --same_sensor_within_set
+#     # Only cross-finger testing!
+# done
