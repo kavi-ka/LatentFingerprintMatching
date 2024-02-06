@@ -2,7 +2,7 @@
 # Purpose: to train our cross-finger recognition model, without pretraining
 
 SD302='/data/therealgabeguo/fingerprint_data/sd302_split'
-SD302_latent='/data/albert/latent_302/latent'
+SD302_latent='/data/albert/latent_302/latent_8bit'
 SD301='/data/therealgabeguo/fingerprint_data/sd301_split'
 SD300='/data/therealgabeguo/fingerprint_data/sd300a_split'
 RIDGEBASE='/data/therealgabeguo/fingerprint_data/RidgeBase_Split'

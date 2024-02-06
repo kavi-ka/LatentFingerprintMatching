@@ -43,7 +43,7 @@ class SquarePad:
 # returns the image as a normalized square with standard size
 def my_transformation(the_image, train=False, target_image_size=(224, 224)):
     #print(target_image_size)
-    print("used")
+    # print("used")
     assert target_image_size[0] == target_image_size[1]
     fill_val = 255 if the_image[0, 0, 0] > 200 else 0
     # common transforms - these are the only transforms for test
@@ -68,9 +68,17 @@ def my_transformation(the_image, train=False, target_image_size=(224, 224)):
         return the_image
     return transform(the_image.float())
 
+
+def convert_image_to_8bit(image_path):
+    print("saving..", image_path)
+    img = Image.open(image_path)
+    img = img.convert('L')  # convert image to 8-bit grayscale
+    img.save(image_path)
+    print("saved..")
+
 def my_read_image(x):
-    print("reading...", x)
-    my_read_image_and_save(x, save_dir='images')
+    # convert_image_to_8bit(x)
+    # my_read_image_and_save(x, save_dir='images')
     if '.bmp' in x:
         pil2tensor = transforms.Compose([transforms.PILToTensor()]) # for .bmp images
         return pil2tensor(Image.open(x).convert('RGB'))
@@ -86,7 +94,6 @@ def my_read_image_and_save(x, save_dir='/path/to/save/images'):
     image_tensor = read_image(x, mode=ImageReadMode.RGB)
     
     # Save the image to the specified directory
-    print("huhhh")
     save_image(image_tensor.float() / 255, save_path)  # Normalize tensor values to [0, 1] for saving
     
     print(f"Image saved to {save_path}")

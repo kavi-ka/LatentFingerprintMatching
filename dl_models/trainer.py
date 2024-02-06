@@ -108,7 +108,9 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, met
     individual_loss_fn = nn.TripletMarginLoss(margin=loss_fn.margin, reduction='none')
     # individual losses
 
-    for batch_idx, (data, target, filepaths) in tqdm(enumerate(train_loader)):        
+    for batch_idx, (data, target, filepaths) in enumerate(train_loader):      
+        print("read in image filepaths:", filepaths)
+
         target = None #target if len(target) > 0 else None
         if not type(data) in (tuple, list):
             data = (data,)
