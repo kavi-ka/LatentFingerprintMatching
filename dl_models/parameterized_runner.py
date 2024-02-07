@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 import torch.optim as optim
 import sys
 import os
@@ -41,6 +42,20 @@ def main(args, cuda):
         diff_sensors_across_sets=args.diff_sensors_across_sets_train, same_sensor_within_set=True, \
         acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
     print(len(training_dataset))
+
+    # Visualize the first 5 images
+    for i in range(min(len(training_dataset), 5)):
+        print("!!!!!")
+        images, labels, file_paths = training_dataset[i]
+
+        print(images)
+        # Images, labels, and file_paths are tuples of (anchor, pos, neg)
+        # Here we visualize the anchor image, you can change this to pos or neg if you want
+        plt.imshow(images[0].numpy().transpose((1, 2, 0)))
+        plt.title(f"Sample {i+1}, Label: {labels[0]}")
+        plt.show()
+    
+    return
 
     # for i in range(min(len(training_dataset), 5)):  # Adjust the range as needed
     #     images, labels, file_paths = training_dataset[i]
