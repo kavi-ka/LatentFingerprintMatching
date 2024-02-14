@@ -11,13 +11,13 @@ prints images to be deleted in log_file2
 '''
 
 # The parent directory's path
-parent_dir = '/data/albert/latent/png'
+parent_dir = '/data/albert/latent_302/latent_8bit_toy'
 
 # name of log file created by script
 log_file = 'blank_img_list.txt' 
 log_file2 = 'unwanted_imgs.txt'
 
-def is_blank(img_pth, threshold=100):
+def is_blank(img_pth, threshold=255):
     try:
         with Image.open(img_pth) as img:
             if img.mode != 'RGB':
@@ -51,6 +51,7 @@ def filter_imgs(dir):
     s = set()
     for root, dirs, files in os.walk(dir):
         for f in files:
+            print(f)
             if not f.lower().endswith(('_1.png', '_1.jpg', '_1.jpeg', '_1.bmp', '_1.gif')):
                 imgs.append(f)
     return imgs
@@ -61,7 +62,7 @@ subdirs = get_subdirs(parent_dir)
 white_imgs, del_imgs = [],[]
 for sbdr in subdirs:
     curr_dir = parent_dir + "/" + sbdr
-    # white_imgs += find_blanks(curr_dir)
+    white_imgs += find_blanks(curr_dir)
     del_imgs += filter_imgs(curr_dir)
 
 
