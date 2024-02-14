@@ -11,7 +11,7 @@ prints images to be deleted in log_file2
 '''
 
 # The parent directory's path
-parent_dir = '/data/albert/latent_302/latent_8bit_toy'
+parent_dir = '/data/albert/latent_302/latent_8bit/train'
 
 # name of log file created by script
 log_file = 'blank_img_list.txt' 
@@ -36,11 +36,10 @@ def find_blanks(dir):
         for f in files:
             if f.lower().endswith(('png', 'jpg', 'jpeg', 'bmp', 'gif')):
                 f_path = os.path.join(root, f)
-                print("checking img ",f_path)
                 if is_blank(f_path):
                     imgs.append(f_path)
 
-    return imgs,
+    return imgs
 
 def get_subdirs(dir):
     subdirs = next(os.walk(dir))[1]
@@ -49,11 +48,14 @@ def get_subdirs(dir):
 def filter_imgs(dir):
     imgs = []
     s = set()
+    print(dir)
     for root, dirs, files in os.walk(dir):
         for f in files:
-            print(f)
+            s.add(f[-5:])
             if not f.lower().endswith(('_1.png', '_1.jpg', '_1.jpeg', '_1.bmp', '_1.gif')):
                 imgs.append(f)
+
+    print("ending set", s)
     return imgs
 
 
@@ -62,7 +64,7 @@ subdirs = get_subdirs(parent_dir)
 white_imgs, del_imgs = [],[]
 for sbdr in subdirs:
     curr_dir = parent_dir + "/" + sbdr
-    white_imgs += find_blanks(curr_dir)
+    #white_imgs += find_blanks(curr_dir)
     del_imgs += filter_imgs(curr_dir)
 
 
