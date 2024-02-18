@@ -17,15 +17,18 @@ parent_dir = '/data/albert/latent_302/latent_8bit/train'
 log_file = 'blank_img_list.txt' 
 log_file2 = 'unwanted_imgs.txt'
 
-def is_blank(img_pth, threshold=255):
+def is_blank(img_pth, threshold=100):
     try:
         with Image.open(img_pth) as img:
             if img.mode != 'RGB':
                 img = img.convert('RGB')
             img_array = np.array(img).flatten()
-            if img_array.any() < threshold:
-                return False
-            return True
+            image_thresh = img_array - 100 
+            image_thresh[image_thresh<0] = 0
+            image_sum = np.sum( image_thresh )
+            if image_sum <  120000000:
+                return True
+            return False
     except Exception as e:
         print(f"error processing {img_pth}: {e}")
         return False
@@ -45,17 +48,15 @@ def get_subdirs(dir):
     subdirs = next(os.walk(dir))[1]
     return subdirs
 
+# returns non _1 images
 def filter_imgs(dir):
     imgs = []
     s = set()
     print(dir)
     for root, dirs, files in os.walk(dir):
         for f in files:
-            s.add(f[-5:])
             if not f.lower().endswith(('_1.png', '_1.jpg', '_1.jpeg', '_1.bmp', '_1.gif')):
                 imgs.append(f)
-
-    print("ending set", s)
     return imgs
 
 
@@ -64,15 +65,17 @@ subdirs = get_subdirs(parent_dir)
 white_imgs, del_imgs = [],[]
 for sbdr in subdirs:
     curr_dir = parent_dir + "/" + sbdr
-    #white_imgs += find_blanks(curr_dir)
+    white_imgs += find_blanks(curr_dir)
     del_imgs += filter_imgs(curr_dir)
 
+if os.path.exists(log_file):
+    os.remove(log_file)
 
 with open(log_file, 'w') as f: 
     for img in white_imgs:
-         f.write(f"{img} & \n")
+         f.write(f"{img} \n")
 
 with open(log_file2, 'w') as f: 
     for img in del_imgs:
-         f.write(f"{img} & \n")
+         f.write(f"{img} \n")
     
