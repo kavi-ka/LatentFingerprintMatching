@@ -17,7 +17,7 @@ GENERAL_CORRELATION_FOLDER="$PROVING_CORRELATION_FOLDER/general"
 # Training base model
 ######
 CUDA_VISIBLE_DEVICES=$2 python3 parameterized_runner.py \
-    --datasets "${SD302_latent_toy}" \
+    --datasets "${SD302_latent} ${SD302}" \
     --val-datasets "${SD302} ${SD300} ${RIDGEBASE}" \
     --posttrained-model-path $BASED_WEIGHTS \
     --temp_model_dir '../temp_weights' --results_dir "$1/results" \

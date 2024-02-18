@@ -48,20 +48,29 @@ import os
 from PIL import Image
 
 # Specify the source and destination directories
-src_dir = "/data/albert/latent_302/latent_8bit/train/00002302/"
-dst_dir = "/home/albert/crystal/LatentFingerprintMatching/dl_models/latent/inspect_images/move"
+latent_src_dir = "/data/albert/latent_302/latent_8bit/train/00002302/"
+latent_dst_dir = "/home/albert/crystal/LatentFingerprintMatching/dl_models/latent/inspect_images/move"
 
-# Get a list of all PNG files in the source directory
-files = [f for f in os.listdir(src_dir) if f.endswith('.png')]
+real_src_dir = "/data/therealgabeguo/fingerprint_data/sd302_split/train/00002502"
+real_dst_dir = "/home/albert/crystal/LatentFingerprintMatching/dl_models/latent/inspect_images/move_real"
 
-# Process the first 5 images
-for file in files[:5]:
-    print(file)
-    # Open the image file
-    img = Image.open(os.path.join(src_dir, file))
 
-    # Convert the image to 8-bit (256 color) mode
-    img = img.convert('P', dither=Image.NONE)
+def move_images(src_dir, dst_dir):
+    # Get a list of all PNG files in the source directory
+    files = [f for f in os.listdir(src_dir) if f.endswith('.png')]
 
-    # Save the image to the destination directory
-    img.save(os.path.join(dst_dir, file))
+    # Process the first 5 images
+    for file in files[:100]:
+        print(file)
+        # Open the image file
+        img = Image.open(os.path.join(src_dir, file))
+
+        # Convert the image to 8-bit (256 color) mode
+        img = img.convert('P', dither=Image.NONE)
+
+        # Save the image to the destination directory
+        img.save(os.path.join(dst_dir, file))
+
+
+# move_images(latent_src_dir, latent_dst_dir)
+move_images(real_src_dir, real_dst_dir)

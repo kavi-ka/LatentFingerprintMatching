@@ -45,15 +45,12 @@ def main(args, cuda):
 
     # Visualize the first 5 images
     for i in range(min(len(training_dataset), 5)):
-        print("!!!!!")
         images, labels, file_paths = training_dataset[i]
+        print(f"Sample {i+1}:")
+        print(None in images)
+        print(None in labels)
+        print(None in file_paths)
 
-        print(images)
-        # Images, labels, and file_paths are tuples of (anchor, pos, neg)
-        # Here we visualize the anchor image, you can change this to pos or neg if you want
-        plt.imshow(images[0].numpy().transpose((1, 2, 0)))
-        plt.title(f"Sample {i+1}, Label: {labels[0]}")
-        plt.show()
     
     return
 
@@ -206,14 +203,14 @@ if __name__ == "__main__":
     else:
         device = torch.device("cpu")
 
-    if args.wandb_project:
-        wandb.login()
-        run = wandb.init(
-            # Set the project where this run will be logged
-            project=args.wandb_project,
-            name=args.posttrained_model_path.split('/')[-1],
-            # Track hyperparameters and run metadata
-            config=vars(args)
-        )
+    # if args.wandb_project:
+    #     wandb.login()
+    #     run = wandb.init(
+    #         # Set the project where this run will be logged
+    #         project=args.wandb_project,
+    #         name=args.posttrained_model_path.split('/')[-1],
+    #         # Track hyperparameters and run metadata
+    #         config=vars(args)
+    #     )
 
     main(args, device)

@@ -1,4 +1,5 @@
 venv
+*.png
 wandb/
 temp_weights/
 __pycache__

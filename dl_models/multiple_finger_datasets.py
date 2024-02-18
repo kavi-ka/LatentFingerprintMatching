@@ -20,7 +20,8 @@ import sys
 sys.path.append('../directory_organization')
 from fileProcessingUtil import get_id, get_fgrp, get_sensor
 
-ALL_FINGERS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
+# AY: only "1" is used as in latent 1 means its a finger, any finger
+ALL_FINGERS = ['1', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
 
 # Use https://discuss.pytorch.org/t/how-to-resize-and-pad-in-a-torchvision-transforms-compose/71850/10
 # makes images squares by padding
@@ -43,7 +44,7 @@ class SquarePad:
 # returns the image as a normalized square with standard size
 def my_transformation(the_image, train=False, target_image_size=(224, 224)):
     #print(target_image_size)
-    print("start tramsformation...")
+    # print("start transformation...")
     assert target_image_size[0] == target_image_size[1]
     fill_val = 255 if the_image[0, 0, 0] > 200 else 0
     # common transforms - these are the only transforms for test
@@ -65,11 +66,11 @@ def my_transformation(the_image, train=False, target_image_size=(224, 224)):
         shadeScaling = 1 + 0.3 * (torch.rand(1).item() - 0.5) # shade scaling between 0.85 and 1.15
         noise = 0.1 * torch.max(the_image) * (torch.rand(target_image_size) - 0.5)
         the_image = shadeScaling * (the_image + noise)
-        print("finished transform...")
+        # print("finished transform...")
         return the_image
     transform_ret = transform(the_image.float())
-    print("finished transform...")
-    return 
+    # print("finished transform...")
+    return transform_ret
 
 
 def convert_image_to_8bit(image_path):
@@ -82,28 +83,12 @@ def convert_image_to_8bit(image_path):
 def my_read_image(x):
     print("reading..", x)
     # convert_image_to_8bit(x)
-    # my_read_image_and_save(x, save_dir='images')
     if '.bmp' in x:
         pil2tensor = transforms.Compose([transforms.PILToTensor()]) # for .bmp images
         return pil2tensor(Image.open(x).convert('RGB'))
     read_image_ret = read_image(x, mode=ImageReadMode.RGB)
-    print("finished reading...")
+    # print("finished reading...")
     return read_image_ret
-
-def my_read_image_and_save(x, save_dir='/path/to/save/images'):
-    # Define the filename for the saved image
-    save_filename = os.path.basename(x)
-    # Define the full path to save the image
-    save_path = os.path.join(save_dir, save_filename)
-    
-    # Read the image using torchvision's read_image
-    image_tensor = read_image(x, mode=ImageReadMode.RGB)
-    
-    # Save the image to the specified directory
-    save_image(image_tensor.float() / 255, save_path)  # Normalize tensor values to [0, 1] for saving
-    
-    print(f"Image saved to {save_path}")
-    return image_tensor
 
 class MultipleFingerDataset(Dataset):
     """
@@ -117,6 +102,10 @@ class MultipleFingerDataset(Dataset):
     -> All anchor fingers must be distinct fingers, all positive fingers must be distinct fingers,
        all negative fingers must be distinct fingers
     -> We can only have fingers from acceptable_anchor_fgrps, acceptable_pos_fgrps, acceptable_neg_fgrps
+
+    AY: For latent prints we have latents as anchors, we will have one positive and one negative non-latent to train on.
+    
+
     """
 
     def __init__(self, fingerprint_dataset, num_anchor_fingers, num_pos_fingers, num_neg_fingers, \
@@ -153,12 +142,27 @@ class MultipleFingerDataset(Dataset):
         self.scale_factor = SCALE_FACTOR
 
         # initialize the lookup tables
+        # AY: labels are the 00002xxx things that represent the people
         self.the_labels = self.fingerprint_dataset.train_labels if self.train else self.fingerprint_dataset.test_labels
+        # AY: data is the filepaths to the images
         self.the_data = self.fingerprint_dataset.train_data if self.train else self.fingerprint_dataset.test_data
+        
+        # new latent data
+        self.the_labels_latent = self.fingerprint_dataset.train_labels_latent if self.train else self.fingerprint_dataset.test_labels_latent
+        self.the_data_latent = self.fingerprint_dataset.train_data_latent if self.train else self.fingerprint_dataset.test_data_latent
+        
+        
         # generate fixed triplets for testing
         self.labels_set = set(self.the_labels)
         self.label_to_indices = {label: np.where(np.array(self.the_labels) == label)[0]
                                     for label in self.labels_set}
+        
+        self.labels_set_latent = set(self.the_labels_latent)
+        print("people in latent, but not real", len([i for i in self.labels_set_latent  if i not in self.labels_set]))
+        print("people in real, but not latent", len([i for i in self.labels_set_latent  if i in self.labels_set]))
+
+        self.labels_set_latent_and_real = self.labels_set_latent.intersection(self.labels_set)
+        print("people in both", len(self.labels_set_latent_and_real))
 
         self.random_state = np.random.RandomState(29)
 
@@ -175,10 +179,13 @@ class MultipleFingerDataset(Dataset):
     def choose_train_anchors(self):
         self.train_anchor_indices = list()
         # ignore scale factor, since pos and neg are randomized every time
-        for i in range(len(self.the_data)):
-            # AY: self.acceptable_anchor_fgrps is set manually as a constant at the top.
-            if True: # self.get_fgrp_from_index(i) in self.acceptable_anchor_fgrps:
+        # AY: only using latent prints as anchors
+        for i in range(len(self.the_data_latent)):
+            # AY: we need to change this too if the image is actually a good enough latent print
+            # if self.get_fgrp_from_index(i) in self.acceptable_anchor_fgrps:
+            if self.get_latent_hand_from_index(i) in ['L' , 'R']:
                 self.train_anchor_indices.append(i)
+        print("train anchor indices: ", len(self.train_anchor_indices))
         return
 
     """
@@ -305,8 +312,6 @@ class MultipleFingerDataset(Dataset):
 
         # satisfy (5) - different fingers than anchor (possibly)
         anchor_fgrps = set([self.get_fgrp_from_index(i) for i in anchor_indices])
-        print(anchor_fgrps)
-        return tuple(ret_val)
 
         retVal_fgrps = set()
         # satisfy (7) - different sensors than anchor (possibly)
@@ -346,8 +351,6 @@ class MultipleFingerDataset(Dataset):
                 continue # satisfy (3), (4) - try again until we get previously unseen samples
             curr_fgrp = self.get_fgrp_from_index(curr_index)
             curr_sensor = self.get_sensor_from_index(curr_index)
-
-            # AY: commenting out for now
 
             if diff_fingers_across_sets and curr_fgrp in anchor_fgrps:
                 print('\t\tviolated fingers - diff across sets: {}'.format(curr_fgrp))
@@ -405,7 +408,53 @@ class MultipleFingerDataset(Dataset):
         assert set([self.get_datasetName_from_index(i) for i in ret_val]) == set([self.get_datasetName_from_index(i) for i in anchor_indices])
         
         return tuple(ret_val)
+
+    def get_item_train_latent_anchor(self, index):
+        
+        anchor_filepath = self.the_data[self.train_anchor_indices[index]]
+        anchor_img = my_transformation(my_read_image(anchor_filepath), train=self.train)
+        anchor_indices=[self.train_anchor_indices[index]]
+
+        # satisfy (5) - different fingers than anchor (possibly)
+        print("whattt", self.get_latent_hand_from_index(anchor_indices[0]))
+        anchor_fgrps = set([self.get_latent_hand_from_index(i) for i in anchor_indices])
+        print("anchor fingers...", anchor_fgrps)
+
+        the_label = self.the_labels_latent[anchor_indices[0]]
+        print("the label...", the_label)
+        same_class_indices = self.label_to_indices[the_label]
+
+        # selecting positive at random
+        pos_index = self.random_state.choice(same_class_indices)
+        pos_filepath = self.the_data[pos_index]
+        pos_img = my_transformation(my_read_image(pos_filepath), train=self.train)
+
+        # selecting negative at random
+        the_label = np.random.choice(
+            list(self.labels_set_latent_and_real - set([the_label]))
+        )
+        neg_index = self.random_state.choice(self.label_to_indices[the_label])
+        neg_filepath = self.the_data[neg_index]
+        neg_img = my_transformation(my_read_image(neg_filepath), train=self.train)
+
+        # getting labels
+        curr_iteration_labels = [self.the_labels_latent[anchor_indices[0]], \
+                            self.the_labels[pos_index], \
+                            self.the_labels[neg_index]
+        ]
+
+        print("HAHHAHAHA", anchor_filepath)
+        assert anchor_img is not None
+        assert pos_img is not None
+        assert neg_img is not None
+
+        return(
+            (anchor_img, pos_img, neg_img),
+            curr_iteration_labels,
+            (anchor_filepath, pos_filepath, neg_filepath)
+        )
     
+
     """
     only works on the server: assumes that paths have format like:
     /data/therealgabeguo/fingerprint_data/sd300a_split/train/00001765/00001765_plain_500_08.png
@@ -428,6 +477,16 @@ class MultipleFingerDataset(Dataset):
     def get_fgrp_from_index(self, i):
         return get_fgrp(self.get_filename_from_index(i))
 
+
+    def get_latent_filename_from_index(self, i):
+        return self.the_data_latent[i].split('/')[-1]
+
+    def get_latent_hand_from_index(self, i):
+
+        def latent_get_hand(filename):
+            return filename.split('_')[2]
+        
+        return latent_get_hand(self.get_latent_filename_from_index(i))
     """
     returns: 
     1) triplet of tuples of images, where:
@@ -439,7 +498,7 @@ class MultipleFingerDataset(Dataset):
     """
     def __getitem__(self, index):
         if self.train: # randomized
-            return self.get_item_train(index)
+            return self.get_item_train_latent_anchor(index)
         else: # deterministic
             return self.get_item_test(index)
 
@@ -447,10 +506,12 @@ class MultipleFingerDataset(Dataset):
     If training, should only be one at a time
     """
     def get_item_train(self, index):
+        # AY: why can we just access the anchor by index?
         anchor_filepath = self.the_data[self.train_anchor_indices[index]]
         anchor_img = my_transformation(my_read_image(anchor_filepath), train=self.train)
+
         print("1. entering get_item_train with index: {}".format(index))
-        curr_pos_indices = self.get_indices(anchor_indices=[self.train_anchor_indices[index]],\
+        curr_pos_indices = self.get_indices_latent_anchor(anchor_indices=[self.train_anchor_indices[index]],\
                         same_class_as_anchor=True, \
                         diff_fingers_across_sets=self.diff_fingers_across_sets,\
                         diff_fingers_within_set=self.diff_fingers_within_set, \
