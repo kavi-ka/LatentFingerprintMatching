@@ -43,16 +43,6 @@ def main(args, cuda):
         acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
     print(len(training_dataset))
 
-    # Visualize the first 5 images
-    for i in range(min(len(training_dataset), 5)):
-        images, labels, file_paths = training_dataset[i]
-        print(f"Sample {i+1}:")
-        print(None in images)
-        print(None in labels)
-        print(None in file_paths)
-
-    
-    return
 
     # for i in range(min(len(training_dataset), 5)):  # Adjust the range as needed
     #     images, labels, file_paths = training_dataset[i]
@@ -63,8 +53,8 @@ def main(args, cuda):
     train_dataloader = DataLoader(training_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
     print(len(train_dataloader))
 
-    # for batch_idx, (images, labels, file_paths) in enumerate(train_dataloader):
-    #     print(f"Batch {batch_idx+1}/{len(train_dataloader)}")
+    for batch_idx, (images, labels, file_paths) in enumerate(train_dataloader):
+        print(f"Batch {batch_idx+1}/{len(train_dataloader)}")
     # latent_util.plot_and_save_ldr("train", train_dataloader)
 
     val_dataset = MultipleFingerDataset(fingerprint_dataset=FingerprintDataset(val_dir_paths, train=False),\
@@ -76,7 +66,10 @@ def main(args, cuda):
     #val_dataset = torch.utils.data.Subset(val_dataset, list(range(0, len(val_dataset), 5)))
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
     
+    for batch_idx, (images, labels, file_paths) in enumerate(val_dataloader):
+            print(f"Batch {batch_idx+1}/{len(val_dataloader)}")
 
+    return
     # CLEAR CUDA MEMORY
     # https://stackoverflow.com/questions/54374935/how-to-fix-this-strange-error-runtimeerror-cuda-error-out-of-memory
     import gc

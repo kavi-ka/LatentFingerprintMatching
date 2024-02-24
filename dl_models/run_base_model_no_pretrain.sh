@@ -18,7 +18,7 @@ GENERAL_CORRELATION_FOLDER="$PROVING_CORRELATION_FOLDER/general"
 ######
 CUDA_VISIBLE_DEVICES=$2 python3 parameterized_runner.py \
     --datasets "${SD302_latent} ${SD302}" \
-    --val-datasets "${SD302} ${SD300} ${RIDGEBASE}" \
+    --val-datasets "${SD302_latent} ${SD302}" \
     --posttrained-model-path $BASED_WEIGHTS \
     --temp_model_dir '../temp_weights' --results_dir "$1/results" \
     --diff-fingers-across-sets-train --diff-sensors-across-sets-train --diff-fingers-across-sets-val --diff-sensors-across-sets-val \

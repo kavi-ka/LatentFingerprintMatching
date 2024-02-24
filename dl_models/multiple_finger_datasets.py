@@ -81,7 +81,7 @@ def convert_image_to_8bit(image_path):
     print("saved..")
 
 def my_read_image(x):
-    print("reading..", x)
+    # print("reading..", x)
     # convert_image_to_8bit(x)
     if '.bmp' in x:
         pil2tensor = transforms.Compose([transforms.PILToTensor()]) # for .bmp images
@@ -164,12 +164,17 @@ class MultipleFingerDataset(Dataset):
         self.labels_set_latent_and_real = self.labels_set_latent.intersection(self.labels_set)
         print("people in both", len(self.labels_set_latent_and_real))
 
+        # self.label_to_indices_latent_and_real = {label: np.where(np.array(self.the_labels_latent) == label)[0]
+        #                             for label in self.labels_set_latent_and_real}
+
         self.random_state = np.random.RandomState(29)
 
         if self.train:
+            # this just filters out the viable anchors, triplets are assigned when dataloader is accessed in train loop
             self.choose_train_anchors()
         else:
-            self.choose_test_triplets()
+            # this sets the triplets, and the dataloader just accesses them
+            self.choose_test_triplets_latent_anchor()
 
         return
 
@@ -183,7 +188,9 @@ class MultipleFingerDataset(Dataset):
         for i in range(len(self.the_data_latent)):
             # AY: we need to change this too if the image is actually a good enough latent print
             # if self.get_fgrp_from_index(i) in self.acceptable_anchor_fgrps:
-            if self.get_latent_hand_from_index(i) in ['L' , 'R']:
+            if self.get_latent_hand_from_index(i) in ['L' , 'R'] \
+                and self.get_latent_class_from_index(i) in self.labels_set_latent_and_real:
+
                 self.train_anchor_indices.append(i)
         print("train anchor indices: ", len(self.train_anchor_indices))
         return
@@ -229,7 +236,43 @@ class MultipleFingerDataset(Dataset):
                         break # found original combo in both anchor-positive and anchor-negative
         self.test_triplets = triplets
         return
+    
+    def choose_test_triplets_latent_anchor(self):
+        seen_combos = set()
+        triplets = list()
 
+        for j in range(self.scale_factor):
+            for i in range(len(self.the_data_latent)):
+                while True:
+                    if self.get_latent_hand_from_index(i) not in ['L', 'R'] or \
+                        (self.get_latent_class_from_index(i) not in self.labels_set_latent_and_real):
+                        break
+                    anchor_indices = [i]
+
+                    the_label = self.the_labels_latent[anchor_indices[0]]
+                    same_class_indices = self.label_to_indices[the_label]
+                    # selecting positive at random
+                    positive_indices = [self.random_state.choice(same_class_indices)]
+
+                    the_label = np.random.choice(
+                        list(self.labels_set_latent_and_real - set([the_label]))
+                    )
+                    negative_indices = [self.random_state.choice(self.label_to_indices[the_label])]
+
+                    curr_anchor_pos_combo = tuple(sorted(anchor_indices + positive_indices))
+                    curr_anchor_neg_combo = tuple(sorted(anchor_indices + negative_indices))
+                    if curr_anchor_pos_combo not in seen_combos \
+                            and curr_anchor_neg_combo not in seen_combos:
+                        seen_combos.add(curr_anchor_pos_combo)
+                        seen_combos.add(curr_anchor_neg_combo)
+                        triplets.append((anchor_indices, positive_indices, negative_indices))
+
+                        # found, so we break
+                        break
+
+        self.test_triplets = triplets
+
+        return
     """
     Returns a tuple of size self.num_fingers, containing:
     -> base_index
@@ -411,17 +454,13 @@ class MultipleFingerDataset(Dataset):
 
     def get_item_train_latent_anchor(self, index):
         
+
         anchor_filepath = self.the_data[self.train_anchor_indices[index]]
         anchor_img = my_transformation(my_read_image(anchor_filepath), train=self.train)
         anchor_indices=[self.train_anchor_indices[index]]
 
-        # satisfy (5) - different fingers than anchor (possibly)
-        print("whattt", self.get_latent_hand_from_index(anchor_indices[0]))
-        anchor_fgrps = set([self.get_latent_hand_from_index(i) for i in anchor_indices])
-        print("anchor fingers...", anchor_fgrps)
-
+        # get the label, or the person of the anchor, and get the non latent prints that are the same person
         the_label = self.the_labels_latent[anchor_indices[0]]
-        print("the label...", the_label)
         same_class_indices = self.label_to_indices[the_label]
 
         # selecting positive at random
@@ -443,7 +482,6 @@ class MultipleFingerDataset(Dataset):
                             self.the_labels[neg_index]
         ]
 
-        print("HAHHAHAHA", anchor_filepath)
         assert anchor_img is not None
         assert pos_img is not None
         assert neg_img is not None
@@ -487,6 +525,10 @@ class MultipleFingerDataset(Dataset):
             return filename.split('_')[2]
         
         return latent_get_hand(self.get_latent_filename_from_index(i))
+
+    def get_latent_class_from_index(self, i):
+        return self.get_latent_filename_from_index(i).split('_')[0]
+
     """
     returns: 
     1) triplet of tuples of images, where:
@@ -499,7 +541,7 @@ class MultipleFingerDataset(Dataset):
     def __getitem__(self, index):
         if self.train: # randomized
             return self.get_item_train_latent_anchor(index)
-        else: # deterministic
+        else: # deterministic 
             return self.get_item_test(index)
 
     """
@@ -540,13 +582,19 @@ class MultipleFingerDataset(Dataset):
         return (anchor_img, pos_img, neg_img), curr_iteration_labels, (anchor_filepath, pos_filepath, neg_filepath)
 
     def get_item_test(self, index):
-        anchor_filepaths = [self.the_data[i] for i in self.test_triplets[index][0]]
+        # first index is latent
+
+        anchor_filepaths = [self.the_data_latent[i] for i in self.test_triplets[index][0]]
+
+        # second and third are non-latent
         pos_filepaths = [self.the_data[i] for i in self.test_triplets[index][1]]
         neg_filepaths = [self.the_data[i] for i in self.test_triplets[index][2]]
 
-        the_labels = [self.the_labels[self.test_triplets[index][0][0]], \
+        # we only ever use 1 for each triplet
+        the_labels = [self.the_labels_latent[self.test_triplets[index][0][0]], \
                     self.the_labels[self.test_triplets[index][1][0]], \
                     self.the_labels[self.test_triplets[index][2][0]]]
+        
         assert the_labels[0] == the_labels[1]
         assert the_labels[0] != the_labels[2]
 
