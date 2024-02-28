@@ -11,6 +11,7 @@ import math
 import getopt, argparse
 import latent.latent_util as latent_util
 
+
 sys.path.append('../')
 
 from trainer import *
@@ -23,51 +24,55 @@ import wandb
 
 def main(args, cuda):    
     datasets = args.datasets.split()
-    val_datasets = args.val_datasets.split()
     possible_fgrps = args.possible_fgrps.split()
     assert set(possible_fgrps).issubset(set(ALL_FINGERS))
 
     the_name = '_'.join([path[:len(path) if path[-1] != '/' else -1].split('/')[-1] for path in datasets])
     print('Name of this dataset:', the_name)
 
-    print('weights saved to:', args.posttrained_model_path)
+    test_dir_paths = [os.path.join(x, 'test') for x in datasets]
 
-    train_dir_paths = [os.path.join(x, 'train') for x in datasets]
-    val_dir_paths = [os.path.join(x, 'val') for x in val_datasets]
-
-    training_dataset = MultipleFingerDataset(fingerprint_dataset=FingerprintDataset(train_dir_paths, train=True),\
+    testing_dataset = MultipleFingerDataset(fingerprint_dataset=FingerprintDataset(test_dir_paths, train=False),\
         num_anchor_fingers=1, num_pos_fingers=1, num_neg_fingers=1,\
         SCALE_FACTOR=args.scale_factor,\
         diff_fingers_across_sets=args.diff_fingers_across_sets_train, diff_fingers_within_set=True,\
         diff_sensors_across_sets=args.diff_sensors_across_sets_train, same_sensor_within_set=True, \
         acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
-    print(len(training_dataset))
+    print(len(testing_dataset))
+
+    test_dataloader = DataLoader(testing_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
+    print(len(test_dataloader))
+
+    weights_path = "/home/albert/crystal/LatentFingerprintMatching/latent-output/results/weights_2024-02-24_19:43:16.pth"
+
+    embedder = EmbeddingNet()
+    weights_dict = torch.load(weights_path, map_location=torch.device(cuda))
+    model_dict = embedder.state_dict()
+    if set(model_dict.keys()) != set(weights_dict.keys()):
+        embedder = TripletNet(embedder)
+    embedder.load_state_dict(torch.load(weights_path, map_location=torch.device(cuda)))
+    if isinstance(embedder, TripletNet):
+        embedder = embedder.embedding_net
+    embedder.eval()
+    embedder.to(cuda)
+    print("model loaded!!!!!")
+
+    data_iter = iter(test_dataloader)
+
+    with torch.no_grad():
+        for i in tqdm(range(len(test_dataloader))):
+            test_images, test_labels, test_filepaths = next(data_iter)
+            assert len(test_images) == 3
+            print("test batch...", len(test_filepaths))
+            print("test labels...", test_labels)
+            # embedder()
+            # embedding_anchor = torch.flatten(embedder(curr_anchor))
+    return 
 
 
-    # for i in range(min(len(training_dataset), 5)):  # Adjust the range as needed
-    #     images, labels, file_paths = training_dataset[i]
-    #     # Images, labels, and file_paths are tuples of (anchor, pos, neg)
-    #     print(f"Sample {i+1}:")
-    #training_dataset = torch.utils.data.Subset(training_dataset, list(range(0, len(training_dataset), 50)))
-    
-    train_dataloader = DataLoader(training_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
-    print(len(train_dataloader))
 
-    # for batch_idx, (images, labels, file_paths) in enumerate(train_dataloader):
-    #     print(f"Batch {batch_idx+1}/{len(train_dataloader)}")
-    # latent_util.plot_and_save_ldr("train", train_dataloader)
 
-    val_dataset = MultipleFingerDataset(fingerprint_dataset=FingerprintDataset(val_dir_paths, train=False),\
-        num_anchor_fingers=1, num_pos_fingers=1, num_neg_fingers=1,\
-        SCALE_FACTOR=args.scale_factor,\
-        diff_fingers_across_sets=args.diff_fingers_across_sets_val, diff_fingers_within_set=True,\
-        diff_sensors_across_sets=args.diff_sensors_across_sets_val, same_sensor_within_set=True, \
-        acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
-    #val_dataset = torch.utils.data.Subset(val_dataset, list(range(0, len(val_dataset), 5)))
-    val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
-    
-    # for batch_idx, (images, labels, file_paths) in enumerate(val_dataloader):
-    #         print(f"Batch {batch_idx+1}/{len(val_dataloader)}")
+
 
     # CLEAR CUDA MEMORY
     # https://stackoverflow.com/questions/54374935/how-to-fix-this-strange-error-runtimeerror-cuda-error-out-of-memory
@@ -160,8 +165,6 @@ if __name__ == "__main__":
     # dataset arguments
     parser.add_argument('--datasets', type=str, default='/data/therealgabeguo/fingerprint_data/sd302_split',
                         help='where is the data stored')
-    parser.add_argument('--val-datasets', type=str, default='/data/therealgabeguo/fingerprint_data/sd302_split',
-                        help='where is the validation data stored')
     parser.add_argument('--scale-factor', type=int, default=1,
                         help='number of times to go over the dataset to create triplets (default: 1)')
     parser.add_argument('--possible-fgrps', type=str, default='01 02 03 04 05 06 07 08 09 10',
@@ -194,15 +197,5 @@ if __name__ == "__main__":
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-
-    if args.wandb_project:
-        wandb.login()
-        run = wandb.init(
-            # Set the project where this run will be logged
-            project=args.wandb_project,
-            name=args.posttrained_model_path.split('/')[-1],
-            # Track hyperparameters and run metadata
-            config=vars(args)
-        )
 
     main(args, device)

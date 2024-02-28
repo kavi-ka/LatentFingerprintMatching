@@ -19,7 +19,7 @@ import argparse
 from scipy.stats import ttest_ind
 
 import json
-
+    
 sys.path.append('../')
 sys.path.append('../directory_organization')
 

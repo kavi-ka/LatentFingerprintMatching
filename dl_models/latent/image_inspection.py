@@ -55,6 +55,7 @@ real_src_dir = "/data/therealgabeguo/fingerprint_data/sd302_split/train/00002502
 real_dst_dir = "/home/albert/crystal/LatentFingerprintMatching/dl_models/latent/inspect_images/move_real"
 
 
+
 def move_images(src_dir, dst_dir):
     # Get a list of all PNG files in the source directory
     files = [f for f in os.listdir(src_dir) if f.endswith('.png')]
