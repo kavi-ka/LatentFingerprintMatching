@@ -17,16 +17,14 @@ parent_dir = '/data/albert/latent_302/latent_8bit/train'
 log_file = 'blank_img_list.txt' 
 log_file2 = 'unwanted_imgs.txt'
 
-def is_blank(img_pth, threshold=100):
+def is_blank(img_pth, threshold=10):
     try:
         with Image.open(img_pth) as img:
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
             img_array = np.array(img).flatten()
-            image_thresh = img_array - 100 
-            image_thresh[image_thresh<0] = 0
-            image_sum = np.sum( image_thresh )
-            if image_sum <  120000000:
+            img_array[img_array == 255] = 0
+            image_sum = np.sum( img_array )
+            if image_sum == 0:
+                print(img_pth)
                 return True
             return False
     except Exception as e:
