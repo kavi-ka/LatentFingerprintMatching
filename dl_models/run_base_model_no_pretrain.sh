@@ -1,6 +1,8 @@
 # Usage: bash run_base_model_no_pretrain.sh output_folder cuda_num
 # Purpose: to train our cross-finger recognition model, without pretraining
 
+# sample bash run_base_model_no_pretrain.sh ../latent-output 4
+
 SD302='/data/therealgabeguo/fingerprint_data/sd302_split'
 
 SD302_latent='/data/albert/302_latent_data_split'

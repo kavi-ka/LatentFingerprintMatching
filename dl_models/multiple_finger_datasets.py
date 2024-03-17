@@ -3,7 +3,7 @@ from torchvision.io import read_image, ImageReadMode
 from torchvision import transforms
 from PIL import Image
 import os
-
+from latent.delete_and_filter import is_blank
 
 import numpy as np
 from PIL import Image
@@ -150,8 +150,7 @@ class MultipleFingerDataset(Dataset):
         # new latent data
         self.the_labels_latent = self.fingerprint_dataset.train_labels_latent if self.train else self.fingerprint_dataset.test_labels_latent
         self.the_data_latent = self.fingerprint_dataset.train_data_latent if self.train else self.fingerprint_dataset.test_data_latent
-        
-        
+
         # generate fixed triplets for testing
         self.labels_set = set(self.the_labels)
         self.label_to_indices = {label: np.where(np.array(self.the_labels) == label)[0]
@@ -181,6 +180,7 @@ class MultipleFingerDataset(Dataset):
     """
     Chooses the fingers to use as anchors for training, sets self.train_anchor_indices
     """
+
     def choose_train_anchors(self):
         self.train_anchor_indices = list()
         # ignore scale factor, since pos and neg are randomized every time
@@ -188,7 +188,8 @@ class MultipleFingerDataset(Dataset):
         for i in range(len(self.the_data_latent)):
             # AY: we need to change this too if the image is actually a good enough latent print
             # if self.get_fgrp_from_index(i) in self.acceptable_anchor_fgrps:
-            if self.get_latent_hand_from_index(i) in ['L' , 'R'] \
+            if not is_blank(self.the_data_latent[i]) \
+                and self.get_latent_hand_from_index(i) in ['L' , 'R'] \
                 and self.get_latent_class_from_index(i) in self.labels_set_latent_and_real:
 
                 self.train_anchor_indices.append(i)
@@ -244,9 +245,11 @@ class MultipleFingerDataset(Dataset):
         for j in range(self.scale_factor):
             for i in range(len(self.the_data_latent)):
                 while True:
-                    if self.get_latent_hand_from_index(i) not in ['L', 'R'] or \
+                    if is_blank(self.the_data_latent[i]) or \
+                        self.get_latent_hand_from_index(i) not in ['L', 'R'] or \
                         (self.get_latent_class_from_index(i) not in self.labels_set_latent_and_real):
                         break
+
                     anchor_indices = [i]
 
                     the_label = self.the_labels_latent[anchor_indices[0]]
@@ -455,18 +458,37 @@ class MultipleFingerDataset(Dataset):
     def get_item_train_latent_anchor(self, index):
         
 
-        anchor_filepath = self.the_data[self.train_anchor_indices[index]]
+        anchor_filepath = self.the_data_latent[self.train_anchor_indices[index]]
+        # print("huuuuh??", anchor_filepath, self.the_labels_latent[self.train_anchor_indices[index]])
+        anchor_hand = anchor_filepath.split('/')[-1].split('_')[2]
         anchor_img = my_transformation(my_read_image(anchor_filepath), train=self.train)
         anchor_indices=[self.train_anchor_indices[index]]
 
-        # get the label, or the person of the anchor, and get the non latent prints that are the same person
-        the_label = self.the_labels_latent[anchor_indices[0]]
+
+        the_label = anchor_filepath.split('/')[-1].split('_')[0]
+        # print("the label2", the_label, anchor_filepath, self.the_labels_latent[self.train_anchor_indices[index]])
+
+        # print()
+        
         same_class_indices = self.label_to_indices[the_label]
 
         # selecting positive at random
-        pos_index = self.random_state.choice(same_class_indices)
-        pos_filepath = self.the_data[pos_index]
+        while True:
+            pos_index = self.random_state.choice(same_class_indices)
+            pos_filepath = self.the_data[pos_index]
+            pos_finger = int(pos_filepath.split('/')[-1].split('_')[-1].split('.')[0])
+            # print(anchor_hand, pos_finger)
+
+            if anchor_hand == "L" and pos_finger <= 5:
+                break
+            if anchor_hand == "R" and pos_finger > 5:
+                break
+
+
         pos_img = my_transformation(my_read_image(pos_filepath), train=self.train)
+
+        # print("file paths", anchor_filepath, pos_filepath)
+        # print(self.the_labels[pos_index])
 
         # selecting negative at random
         the_label = np.random.choice(
@@ -475,12 +497,14 @@ class MultipleFingerDataset(Dataset):
         neg_index = self.random_state.choice(self.label_to_indices[the_label])
         neg_filepath = self.the_data[neg_index]
         neg_img = my_transformation(my_read_image(neg_filepath), train=self.train)
-
+        # print(self.the_labels[neg_index])
+        # print("...")
         # getting labels
         curr_iteration_labels = [self.the_labels_latent[anchor_indices[0]], \
                             self.the_labels[pos_index], \
                             self.the_labels[neg_index]
         ]
+        # print("training sanity...", curr_iteration_labels, (anchor_filepath, pos_filepath, neg_filepath))
 
         assert anchor_img is not None
         assert pos_img is not None
@@ -590,11 +614,13 @@ class MultipleFingerDataset(Dataset):
         pos_filepaths = [self.the_data[i] for i in self.test_triplets[index][1]]
         neg_filepaths = [self.the_data[i] for i in self.test_triplets[index][2]]
 
+        # print("test file pathssss", anchor_filepaths, pos_filepaths, neg_filepaths)
+
         # we only ever use 1 for each triplet
         the_labels = [self.the_labels_latent[self.test_triplets[index][0][0]], \
                     self.the_labels[self.test_triplets[index][1][0]], \
                     self.the_labels[self.test_triplets[index][2][0]]]
-        
+        # print("the labels", the_labels, '!!!!!!!!!')
         assert the_labels[0] == the_labels[1]
         assert the_labels[0] != the_labels[2]
 
@@ -604,8 +630,10 @@ class MultipleFingerDataset(Dataset):
         
         # for backwards compatability in train loop - remove singleton tuples, just return the items themselves
         if self.num_anchor_fingers == 1 and self.num_pos_fingers == 1 and self.num_neg_fingers == 1:
+            # print("test111", (anchor_filepaths[0], pos_filepaths[0], neg_filepaths[0]))
+            # print("test222", (the_labels[0], the_labels[1], the_labels[2]))
             return (anchor_imgs[0], pos_imgs[0], neg_imgs[0]), \
-                (the_labels[0][0], the_labels[1][0], the_labels[2][0]), \
+                (the_labels[0], the_labels[1], the_labels[2]), \
                 (anchor_filepaths[0], pos_filepaths[0], neg_filepaths[0])
 
         return (anchor_imgs, pos_imgs, neg_imgs), the_labels, (anchor_filepaths, pos_filepaths, neg_filepaths)

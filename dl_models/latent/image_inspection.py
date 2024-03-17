@@ -54,24 +54,106 @@ latent_dst_dir = "/home/albert/crystal/LatentFingerprintMatching/dl_models/laten
 real_src_dir = "/data/therealgabeguo/fingerprint_data/sd302_split/train/00002502"
 real_dst_dir = "/home/albert/crystal/LatentFingerprintMatching/dl_models/latent/inspect_images/move_real"
 
+filter_src = "/data/albert/302_latent_data/00002360"
+filter_dst = "/home/albert/crystal/LatentFingerprintMatching/dl_models/latent/inspect_images/move_filter"
+
+from delete_and_filter import is_blank
+
+# def copy_images_for_inspect(src_dir, dst_dir):
+
+#     # Check if the destination directory exists
+#     if not os.path.exists(dst_dir):
+#         # If not, create it
+#         os.makedirs(dst_dir)
+#     else:
+#         # If it does, clear it
+#         for filename in os.listdir(dst_dir):
+#             file_path = os.path.join(dst_dir, filename)
+#             try:
+#                 if os.path.isfile(file_path) or os.path.islink(file_path):
+#                     os.unlink(file_path)
+#                 elif os.path.isdir(file_path):
+#                     shutil.rmtree(file_path)
+#             except Exception as e:
+#                 print('Failed to delete %s. Reason: %s' % (file_path, e))
+
+#     # Get a list of all PNG files in the source directory
+#     files = [f for f in os.listdir(src_dir) if f.endswith('.png')]
+
+#     # Process the first 5 images
+#     for file in files[:100]:
+#         print(file)
+#         full_path = os.path.join(src_dir, file)
+
+#         if is_blank(full_path):
+#             # Open the image file
+#             img = Image.open(os.path.join(src_dir, file))
+
+#             # Convert the image to 8-bit (256 color) mode
+#             img = img.convert('P', dither=Image.NONE)
+
+#             # Save the image to the destination directory
+#             img.save(os.path.join(dst_dir, file))
+#         else:
+#             # Open the image file
+#             img = Image.open(os.path.join(src_dir, file))
+
+#             # Convert the image to 8-bit (256 color) mode
+#             img = img.convert('P', dither=Image.NONE)
+
+#             # Save the image to the destination directory
+#             img.save(os.path.join(dst_dir, file))
+        
 
 
-def move_images(src_dir, dst_dir):
+# copy_images_for_inspect(latent_src_dir, latent_dst_dir)
+# copy_images_for_inspect(real_src_dir, real_dst_dir)
+# copy_images_for_inspect(filter_src, latent_dst_dir)
+
+
+
+def copy_images_for_inspect(src_dir, dst_dir):
+
+    # Check if the destination directory exists
+    if not os.path.exists(dst_dir):
+        # If not, create it
+        os.makedirs(dst_dir)
+    else:
+        # If it does, clear it
+        for filename in os.listdir(dst_dir):
+            file_path = os.path.join(dst_dir, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print('Failed to delete %s. Reason: %s' % (file_path, e))
+    print("dir prepared...")
+    # Create subdirectories for blank and non-blank images
+    blank_dir = os.path.join(dst_dir, 'blank')
+    non_blank_dir = os.path.join(dst_dir, 'non_blank')
+    os.makedirs(blank_dir, exist_ok=True)
+    os.makedirs(non_blank_dir, exist_ok=True)
+
     # Get a list of all PNG files in the source directory
     files = [f for f in os.listdir(src_dir) if f.endswith('.png')]
-
+    
     # Process the first 5 images
-    for file in files[:100]:
-        print(file)
+    for file in files:
+        print(111, file)
+        full_path = os.path.join(src_dir, file)
+
         # Open the image file
-        img = Image.open(os.path.join(src_dir, file))
+        img = Image.open(full_path)
 
         # Convert the image to 8-bit (256 color) mode
         img = img.convert('P', dither=Image.NONE)
 
-        # Save the image to the destination directory
-        img.save(os.path.join(dst_dir, file))
+        # Save the image to the appropriate subdirectory
+        if is_blank(full_path):
+            img.save(os.path.join(blank_dir, file))
+        else:
+            img.save(os.path.join(non_blank_dir, file))
 
-
-# move_images(latent_src_dir, latent_dst_dir)
-move_images(real_src_dir, real_dst_dir)
+copy_images_for_inspect(filter_src, latent_dst_dir)

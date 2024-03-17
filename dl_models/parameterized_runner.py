@@ -80,9 +80,11 @@ def main(args, cuda):
 
     # CREATE EMBEDDER
     embedder = EmbeddingNet(pretrained=False)
+    embedder_latent = EmbeddingNet(pretrained=False)
 
     # load saved weights!
-    if args.pretrained_model_path:
+    args.pretrained_model_path = '/data/therealgabeguo/fingerprint_weights/balanced_model_sd302_sd300.pth'
+    if True:#args.pretrained_model_path:
         print('loading pretrain state dict')
         embedder.load_state_dict(torch.load(args.pretrained_model_path))
         print('successfully loaded pretrain state dict')
@@ -91,7 +93,7 @@ def main(args, cuda):
     print(pretrained_other_msg)
 
     # CREATE TRIPLET NET
-    triplet_net = TripletNet(embedder)
+    triplet_net = TripletNet(embedder, embedder_latent)
 
     # TRAIN
     optimizer = optim.Adam(triplet_net.parameters(), lr=args.lr)
@@ -139,7 +141,7 @@ if __name__ == "__main__":
                         help='input batch size for training (default: 64)')
     parser.add_argument('--num-accumulated-batches', type=int, default=1,
                         help='number of accumulated batches before weight update (default: 1)')
-    parser.add_argument('--num-epochs', type=int, default=250,
+    parser.add_argument('--num-epochs', type=int, default=500,
                         help='number of epochs to train (default: 250)')
     parser.add_argument('--early-stopping-interval', type=int, default=85,
                         help='how long to train model before early stopping, if no improvement')

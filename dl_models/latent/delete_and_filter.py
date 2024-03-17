@@ -17,14 +17,14 @@ parent_dir = '/data/albert/latent_302/latent_8bit/train'
 log_file = 'blank_img_list.txt' 
 log_file2 = 'unwanted_imgs.txt'
 
-def is_blank(img_pth, threshold=10):
+def is_blank(img_pth, threshold=235):
     try:
         with Image.open(img_pth) as img:
             img_array = np.array(img).flatten()
-            img_array[img_array == 255] = 0
-            image_sum = np.sum( img_array )
-            if image_sum == 0:
-                print(img_pth)
+            image_sum = np.average(img_array)
+            # print(image_sum)
+            if image_sum >= threshold:
+                # print(222, img_pth)
                 return True
             return False
     except Exception as e:
@@ -58,22 +58,22 @@ def filter_imgs(dir):
     return imgs
 
 
-subdirs = get_subdirs(parent_dir)
+# subdirs = get_subdirs(parent_dir)
 
-white_imgs, del_imgs = [],[]
-for sbdr in subdirs:
-    curr_dir = parent_dir + "/" + sbdr
-    white_imgs += find_blanks(curr_dir)
-    del_imgs += filter_imgs(curr_dir)
+# white_imgs, del_imgs = [],[]
+# for sbdr in subdirs:
+#     curr_dir = parent_dir + "/" + sbdr
+#     white_imgs += find_blanks(curr_dir)
+#     del_imgs += filter_imgs(curr_dir)
 
-if os.path.exists(log_file):
-    os.remove(log_file)
+# if os.path.exists(log_file):
+#     os.remove(log_file)
 
-with open(log_file, 'w') as f: 
-    for img in white_imgs:
-         f.write(f"{img} \n")
+# with open(log_file, 'w') as f: 
+#     for img in white_imgs:
+#          f.write(f"{img} \n")
 
-with open(log_file2, 'w') as f: 
-    for img in del_imgs:
-         f.write(f"{img} \n")
+# with open(log_file2, 'w') as f: 
+#     for img in del_imgs:
+#          f.write(f"{img} \n")
     

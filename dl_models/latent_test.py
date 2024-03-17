@@ -24,6 +24,7 @@ import wandb
 
 def main(args, cuda):    
     datasets = args.datasets.split()
+    print("datasets", datasets)
     possible_fgrps = args.possible_fgrps.split()
     assert set(possible_fgrps).issubset(set(ALL_FINGERS))
 
@@ -40,7 +41,7 @@ def main(args, cuda):
         acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
     print(len(testing_dataset))
 
-    test_dataloader = DataLoader(testing_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
+    test_dataloader = DataLoader(testing_dataset, batch_size=1, shuffle=True, pin_memory=True, num_workers=16)
     print(len(test_dataloader))
 
     weights_path = "/home/albert/crystal/LatentFingerprintMatching/latent-output/results/weights_2024-02-24_19:43:16.pth"
@@ -65,6 +66,7 @@ def main(args, cuda):
             assert len(test_images) == 3
             print("test batch...", len(test_filepaths))
             print("test labels...", test_labels)
+            print("test filepaths...", test_filepaths)
             # embedder()
             # embedding_anchor = torch.flatten(embedder(curr_anchor))
     return 
@@ -163,7 +165,7 @@ if __name__ == "__main__":
     parser.add_argument('--results_dir', type=str, default='/data/therealgabeguo/results',
                         help='what directory to save the results in')
     # dataset arguments
-    parser.add_argument('--datasets', type=str, default='/data/therealgabeguo/fingerprint_data/sd302_split',
+    parser.add_argument('--datasets', type=str, default='/data/therealgabeguo/fingerprint_data/sd302_split /data/albert/302_latent_data_split',
                         help='where is the data stored')
     parser.add_argument('--scale-factor', type=int, default=1,
                         help='number of times to go over the dataset to create triplets (default: 1)')

@@ -23,12 +23,16 @@ class EmbeddingNet(nn.Module):
         return self.forward(x)
 
 class TripletNet(nn.Module):
-    def __init__(self, embedding_net):
+    def __init__(self, embedding_net, embedding_net_latent):
         super(TripletNet, self).__init__()
         self.embedding_net = embedding_net
+        self.embedding_net_latent = embedding_net_latent
+
+        # for param in self.embedding_net.parameters():
+        #     param.requires_grad = False
 
     def forward(self, x1, x2, x3):
-        output1 = self.embedding_net(x1)
+        output1 = self.embedding_net_latent(x1)
         output2 = self.embedding_net(x2)
         output3 = self.embedding_net(x3)
         return output1, output2, output3
