@@ -241,7 +241,6 @@ class MultipleFingerDataset(Dataset):
     def choose_test_triplets_latent_anchor(self):
         seen_combos = set()
         triplets = list()
-
         for j in range(self.scale_factor):
             for i in range(len(self.the_data_latent)):
                 while True:
@@ -274,7 +273,6 @@ class MultipleFingerDataset(Dataset):
                         break
 
         self.test_triplets = triplets
-
         return
     """
     Returns a tuple of size self.num_fingers, containing:

@@ -39,7 +39,7 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs
 
     for epoch in range(start_epoch, n_epochs):
         print('current epoch:', epoch)
-        
+
         # Train stage
         train_loss, metrics = train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, metrics,\
             accumulation_steps=num_accumulated_batches)
@@ -57,14 +57,17 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs
             best_val_epoch = epoch
             torch.save(model.state_dict(), temp_model_path)
         past_val_losses.append(val_loss)
-        if len(past_val_losses) > early_stopping_interval and val_loss > sum(past_val_losses[-early_stopping_interval:]) / len(past_val_losses[-early_stopping_interval:]):
-            print('val loss no longer decreasing - stop training')
 
-            # load best weights
-            model.load_state_dict(torch.load(temp_model_path))
-            model.eval()
+        # not early stopping
 
-            break
+        # if len(past_val_losses) > early_stopping_interval and val_loss > sum(past_val_losses[-early_stopping_interval:]) / len(past_val_losses[-early_stopping_interval:]):
+        #     print('val loss no longer decreasing - stop training')
+
+        #     # load best weights
+        #     model.load_state_dict(torch.load(temp_model_path))
+        #     model.eval()
+
+        #     break
 
         message += '\nEpoch: {}/{}. Validation set: Average loss: {:.4f}'.format(epoch + 1, n_epochs,
                                                                                  val_loss)
@@ -108,8 +111,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, met
     individual_loss_fn = nn.TripletMarginLoss(margin=loss_fn.margin, reduction='none')
     # individual losses
 
-    for batch_idx, (data, target, filepaths) in enumerate(train_loader):   
-        print("read in image filepaths:", filepaths)
+    for batch_idx, (data, target, filepaths) in enumerate(train_loader):
 
         target = None #target if len(target) > 0 else None
         if not type(data) in (tuple, list):

@@ -41,7 +41,7 @@ def main(args, cuda):
         diff_fingers_across_sets=args.diff_fingers_across_sets_train, diff_fingers_within_set=True,\
         diff_sensors_across_sets=args.diff_sensors_across_sets_train, same_sensor_within_set=True, \
         acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
-    print(len(training_dataset))
+    print("data in train...000", len(training_dataset))
 
 
     # for i in range(min(len(training_dataset), 5)):  # Adjust the range as needed
@@ -51,7 +51,7 @@ def main(args, cuda):
     #training_dataset = torch.utils.data.Subset(training_dataset, list(range(0, len(training_dataset), 50)))
     
     train_dataloader = DataLoader(training_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
-    print(len(train_dataloader))
+    print("batches in train...", len(train_dataloader))
 
     # for batch_idx, (images, labels, file_paths) in enumerate(train_dataloader):
     #     print(f"Batch {batch_idx+1}/{len(train_dataloader)}")
@@ -63,9 +63,10 @@ def main(args, cuda):
         diff_fingers_across_sets=args.diff_fingers_across_sets_val, diff_fingers_within_set=True,\
         diff_sensors_across_sets=args.diff_sensors_across_sets_val, same_sensor_within_set=True, \
         acceptable_anchor_fgrps=possible_fgrps, acceptable_pos_fgrps=possible_fgrps, acceptable_neg_fgrps=possible_fgrps)
+    print("data in val:", len(val_dataset))
     #val_dataset = torch.utils.data.Subset(val_dataset, list(range(0, len(val_dataset), 5)))
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
-    
+    print("batches in val:", len(val_dataloader))
     # for batch_idx, (images, labels, file_paths) in enumerate(val_dataloader):
     #         print(f"Batch {batch_idx+1}/{len(val_dataloader)}")
 
@@ -97,6 +98,7 @@ def main(args, cuda):
 
     # TRAIN
     optimizer = optim.Adam(triplet_net.parameters(), lr=args.lr)
+    args.num_epochs = 500
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.num_epochs, 
                                                      eta_min=args.lr*1e-3, last_epoch=- 1, verbose=False)
 
@@ -123,6 +125,7 @@ def main(args, cuda):
     # SAVE MODEL
     os.makedirs(os.path.dirname(args.posttrained_model_path), exist_ok=True)
     torch.save(embedder.state_dict(), args.posttrained_model_path)
+    torch.save(embedder_latent.state_dict(), args.posttrained_model_path.replace('.pth', '_latent.pth'))
 
     from datetime import datetime
     datetime_str = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
@@ -132,6 +135,8 @@ def main(args, cuda):
         fout.write('\nbest_val_epoch = {}\nbest_val_loss = {}\n'.format(best_val_epoch, best_val_loss))
         fout.write('\nepochs: {}\ntrain_losses: {}\nval_losses: {}\n'.format(all_epochs, past_train_losses, past_val_losses))
     torch.save(embedder.state_dict(), os.path.join(args.results_dir, 'weights_{}.pth'.format(datetime_str)))
+    torch.save(embedder_latent.state_dict(), os.path.join(args.results_dir, 'weights_{}_latent.pth'.format(datetime_str)))
+
     return
 
 if __name__ == "__main__":
