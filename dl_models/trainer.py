@@ -4,9 +4,9 @@ import torch
 import numpy as np
 import torch.nn as nn
 from tqdm import tqdm
-
+from datetime import datetime
 import wandb
-
+import os
 
 def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, metrics=[],
         start_epoch=0, early_stopping_interval=10, temp_model_path='temp.pth', \
@@ -23,6 +23,12 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs
     Returns: epoch stopped on and final val loss
     Loads the best validation weights into the model
     """
+
+    datedir ='../temp_weights/' +  str(datetime.now().date()).replace("-","_") + "/"
+    if not os.path.isdir(datedir):
+        os.mkdir(datedir) 
+
+
 
     print('temp model:', temp_model_path)
 
@@ -52,10 +58,12 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs
         # Test stage
         val_loss, metrics = test_epoch(val_loader, model, loss_fn, cuda, metrics)
         val_loss /= len(val_loader)
-        if val_loss < best_val_loss:
+
+
+        if epoch % 2 == 0: #val_loss < best_val_loss:
             best_val_loss = val_loss
             best_val_epoch = epoch
-            torch.save(model.state_dict(), temp_model_path)
+            torch.save(model.state_dict(), datedir + "temp_302_latent_data_split_sd302_epoch" + str(epoch) + "_split.pth")
         past_val_losses.append(val_loss)
 
         # not early stopping
@@ -68,6 +76,9 @@ def fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs
         #     model.eval()
 
         #     break
+
+
+        
 
         message += '\nEpoch: {}/{}. Validation set: Average loss: {:.4f}'.format(epoch + 1, n_epochs,
                                                                                  val_loss)
