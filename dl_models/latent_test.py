@@ -44,20 +44,23 @@ def main(args, cuda):
     test_dataloader = DataLoader(testing_dataset, batch_size=1, shuffle=True, pin_memory=True, num_workers=16)
     print(len(test_dataloader))
 
-    weights_path = "/home/albert/crystal/LatentFingerprintMatching/latent-output/results/weights_2024-02-24_19:43:16.pth"
+    weights_path = "/home/albert/crystal/LatentFingerprintMatching/latent-output/results/weights_2024-03-25_00:21:18.pth"
+    latent_weights_path = "/home/albert/crystal/LatentFingerprintMatching/latent-output/results/weights_2024-03-25_00:21:18_latent.pth"
 
     embedder = EmbeddingNet()
-    weights_dict = torch.load(weights_path, map_location=torch.device(cuda))
-    model_dict = embedder.state_dict()
-    if set(model_dict.keys()) != set(weights_dict.keys()):
-        embedder = TripletNet(embedder)
     embedder.load_state_dict(torch.load(weights_path, map_location=torch.device(cuda)))
-    if isinstance(embedder, TripletNet):
-        embedder = embedder.embedding_net
+
     embedder.eval()
     embedder.to(cuda)
-    print("model loaded!!!!!")
 
+    latent_embedder = EmbeddingNet()
+    latent_embedder.load_state_dict(torch.load(latent_weights_path, map_location=torch.device(cuda)))
+
+    latent_embedder.eval()
+    latent_embedder.to(cuda)
+    
+    print("model loaded!!!!!")
+    return
     data_iter = iter(test_dataloader)
 
     with torch.no_grad():
