@@ -22,6 +22,60 @@ from common_filepaths import *
 
 import wandb
 
+output_dir = '/home/albert/crystal/LatentFingerprintMatching/dl_models/latent/inspect_images/res' 
+
+# Pre: parameters are 2 1D tensors
+def euclideanDist(tensor1, tensor2):
+    return (tensor1 - tensor2).pow(2).sum(0)
+
+def get_metrics(_01_dist, _02_dist):
+    all_distances = _01_dist +_02_dist
+    all_distances.sort()
+
+    tp, fp, tn, fn = list(), list(), list(), list()
+    acc = list()
+
+    # try different thresholds
+    for dist in all_distances:
+        tp.append(len([x for x in _01_dist if x < dist]))
+        tn.append(len([x for x in _02_dist if x >= dist]))
+        fn.append(len(_01_dist) - tp[-1])
+        fp.append(len(_02_dist) - tn[-1])
+
+        acc.append((tp[-1] + tn[-1]) / len(all_distances))
+    threshold = all_distances[max(range(len(acc)), key=acc.__getitem__)]
+
+    # ROC AUC is FPR = FP / (FP + TN) (x-axis) vs TPR = TP / (TP + FN) (y-axis)
+    fpr = [0] + [fp[i] / (fp[i] + tn[i]) for i in range(len(fp))] + [1]
+    tpr = [0] + [tp[i] / (tp[i] + fn[i]) for i in range(len(tp))] + [1]
+    auc = sum([tpr[i] * (fpr[i] - fpr[i - 1]) for i in range(1, len(tpr))])
+
+    assert auc >= 0 and auc <= 1
+
+    for i in range(1, len(fpr)):
+        assert fpr[i] >= fpr[i - 1]
+        assert tpr[i] >= tpr[i - 1]
+
+    # One-sided Welch's t-test that diff-person pairs are more dissimilar than same-person pairs
+    # welch_t, p_val = ttest_ind(_01_dist, _02_dist, equal_var=False, alternative='less')
+
+    return acc, fpr, tpr, auc, threshold# , welch_t, p_val
+
+def plot_roc_auc(fpr, tpr, dataset_name, weights_name, num_anchors, num_pos, num_neg):
+    plt.plot(fpr, tpr)
+    plt.xlabel('FPR')
+    plt.ylabel('TPR')
+    plt.title('ROC Curve')
+    plt.grid()
+    plt.savefig(os.path.join(output_dir, 'roc_curve_{}_{}_{}_{}_{}.pdf'.format(\
+        dataset_name, weights_name, num_anchors, num_pos, num_neg)))
+    plt.savefig(os.path.join(output_dir, 'roc_curve_{}_{}_{}_{}_{}.png'.format(\
+        dataset_name, weights_name, num_anchors, num_pos, num_neg)))
+    plt.clf(); plt.close()
+
+    return
+
+
 def main(args, cuda):    
     datasets = args.datasets.split()
     print("datasets", datasets)
@@ -58,20 +112,54 @@ def main(args, cuda):
 
     latent_embedder.eval()
     latent_embedder.to(cuda)
-    
+
     print("model loaded!!!!!")
-    return
+
     data_iter = iter(test_dataloader)
+
+    total_d01, total_d02 = 0, 0
+    d01_distances = []
+    d02_distances = []
 
     with torch.no_grad():
         for i in tqdm(range(len(test_dataloader))):
             test_images, test_labels, test_filepaths = next(data_iter)
+            anchor_image = test_images[0].to(cuda)
+            pos_image = test_images[1].to(cuda)
+            neg_image = test_images[2].to(cuda)
+
+            embedder_anchor = torch.flatten(latent_embedder(anchor_image))
+            embedder_pos = torch.flatten(embedder(pos_image))
+            embedder_neg = torch.flatten(embedder(neg_image))
+            d01 = euclideanDist(embedder_anchor, embedder_pos)
+            d02 = euclideanDist(embedder_anchor, embedder_neg)
+
+            total_d01 += d01
+            total_d02 += d02
+
+            d01_distances.append(d01)
+            d02_distances.append(d02)
+
+
+            # print()
             assert len(test_images) == 3
-            print("test batch...", len(test_filepaths))
-            print("test labels...", test_labels)
-            print("test filepaths...", test_filepaths)
+            # print("test batch...", len(test_filepaths))
+            # print("test labels...", test_labels)
+            # print("test filepaths...", test_filepaths)
             # embedder()
             # embedding_anchor = torch.flatten(embedder(curr_anchor))
+    total_d01 /= len(test_dataloader)
+    total_d02 /= len(test_dataloader)
+
+    print("total_d01", total_d01)
+    print("total_d02", total_d02)
+    accs, fpr, tpr, auc, threshold = get_metrics(d01_distances, d02_distances)
+
+    plot_roc_auc(fpr=fpr, tpr=tpr, \
+        dataset_name='latent302', weights_name='w25', \
+        num_anchors='1', num_pos='1', num_neg='1')
+
+
     return 
 
 
