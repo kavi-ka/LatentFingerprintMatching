@@ -78,7 +78,6 @@ def main(args, cuda):
 
 
 
-
     # CLEAR CUDA MEMORY
     # https://stackoverflow.com/questions/54374935/how-to-fix-this-strange-error-runtimeerror-cuda-error-out-of-memory
     import gc
