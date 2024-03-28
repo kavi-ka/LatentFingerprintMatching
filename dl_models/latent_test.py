@@ -142,7 +142,7 @@ def main(args, cuda):
             d01_distances.append(d01)
             d02_distances.append(d02)
 
-            if d01 < (d02 - 0.4):
+            if d01 < (d02 - 0.5):
                 for index, j in enumerate(['0', '1', '2']):
                     print("saving very wrong...", test_filepaths[index][0])
                     # Open the image file
@@ -154,7 +154,7 @@ def main(args, cuda):
                     dir_path = os.path.join(image_wrong_dir, str(i))
                     os.makedirs(dir_path, exist_ok=True)
                     img.save(os.path.join(dir_path, j + '.png'))
-            elif d02 < (d01 - 0.4):
+            elif d02 < (d01 - 0.5):
                 for index, j in enumerate(['0', '1', '2']):
                     print("saving very correct...", test_filepaths[index][0])
                     # Open the image file

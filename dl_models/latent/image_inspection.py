@@ -45,7 +45,7 @@ def testing_image_save():
     plt.show()
 
 import os
-from PIL import Image
+from PIL import Image, ImageOps, ImageEnhance
 
 # Specify the source and destination directories
 latent_src_dir = "/data/albert/latent_302/latent_8bit/train/00002302/"
@@ -138,17 +138,22 @@ def copy_images_for_inspect(src_dir, dst_dir):
 
     # Get a list of all PNG files in the source directory
     files = [f for f in os.listdir(src_dir) if f.endswith('.png')]
-    
+    contrast_factor = 2
     # Process the first 5 images
     for file in files:
         print(111, file)
         full_path = os.path.join(src_dir, file)
 
         # Open the image file
-        img = Image.open(full_path)
+        img = Image.open(full_path).convert('L')
+        img = ImageOps.autocontrast(img)
+        enhancer = ImageEnhance.Contrast(img)
+        img = enhancer.enhance(contrast_factor)
 
         # Convert the image to 8-bit (256 color) mode
         img = img.convert('P', dither=Image.NONE)
+
+        
 
         # Save the image to the appropriate subdirectory
         if is_blank(full_path):
