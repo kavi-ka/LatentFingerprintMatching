@@ -2,11 +2,12 @@ import os
 import shutil
 from sklearn.model_selection import train_test_split
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps, ImageEnhance
+from delete_and_filter import is_blank
 
 # Define the source and target directories
 source_dir = '/data/albert/302_latent_data'
-base_dir = '/data/albert/302_latent_data_split'
+base_dir = '/data/albert/302_filtered_latent_data_split'
 
 # the original scanned finger print data split is here
 non_latent_dir = '/data/therealgabeguo/fingerprint_data/sd302_split'
@@ -33,9 +34,19 @@ if False:
     train, val = train_test_split(train_val, test_size=0.125, random_state=42)  # 0.125 * 80% = 10% for validation
 
 def convert_image_to_8bit(image_path):
-    img = Image.open(image_path)
-    img = img.convert('L')  # convert image to 8-bit grayscale
-    img.save(image_path)
+    contrast_factor = 2
+    img = Image.open(image_path).convert('L')
+    img = ImageOps.autocontrast(img)
+    enhancer = ImageEnhance.Contrast(img)
+    img = enhancer.enhance(contrast_factor)
+
+    # Convert the image to 8-bit (256 color) mode
+    img = img.convert('L', dither=Image.NONE)
+    if is_blank(img):
+        return
+    else:
+        img.save(image_path)
+        return
 
 # Function to move subfolders to target directories
 def move_subfolders(subfolders, target_dir):

@@ -151,12 +151,11 @@ def copy_images_for_inspect(src_dir, dst_dir):
         img = enhancer.enhance(contrast_factor)
 
         # Convert the image to 8-bit (256 color) mode
-        img = img.convert('P', dither=Image.NONE)
+        img = img.convert('L', dither=Image.NONE)
 
         
-
         # Save the image to the appropriate subdirectory
-        if is_blank(full_path):
+        if is_blank(img):
             img.save(os.path.join(blank_dir, file))
         else:
             img.save(os.path.join(non_blank_dir, file))

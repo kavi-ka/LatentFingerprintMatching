@@ -28,8 +28,8 @@ class TripletNet(nn.Module):
         self.embedding_net = embedding_net
         self.embedding_net_latent = embedding_net_latent
 
-        # for param in self.embedding_net.parameters():
-        #     param.requires_grad = False
+        for param in self.embedding_net.parameters():
+            param.requires_grad = False
 
     def forward(self, x1, x2, x3):
         output1 = self.embedding_net_latent(x1)

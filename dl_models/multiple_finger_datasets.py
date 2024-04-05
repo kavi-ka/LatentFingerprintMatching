@@ -188,8 +188,7 @@ class MultipleFingerDataset(Dataset):
         for i in range(len(self.the_data_latent)):
             # AY: we need to change this too if the image is actually a good enough latent print
             # if self.get_fgrp_from_index(i) in self.acceptable_anchor_fgrps:
-            if not is_blank(self.the_data_latent[i]) \
-                and self.get_latent_hand_from_index(i) in ['L' , 'R'] \
+            if self.get_latent_hand_from_index(i) in ['L' , 'R'] \
                 and self.get_latent_class_from_index(i) in self.labels_set_latent_and_real:
 
                 self.train_anchor_indices.append(i)
@@ -244,8 +243,7 @@ class MultipleFingerDataset(Dataset):
         for j in range(self.scale_factor):
             for i in range(len(self.the_data_latent)):
                 while True:
-                    if is_blank(self.the_data_latent[i]) or \
-                        self.get_latent_hand_from_index(i) not in ['L', 'R'] or \
+                    if self.get_latent_hand_from_index(i) not in ['L', 'R'] or \
                         (self.get_latent_class_from_index(i) not in self.labels_set_latent_and_real):
                         break
 

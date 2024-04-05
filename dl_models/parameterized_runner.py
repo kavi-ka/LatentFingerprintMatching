@@ -88,6 +88,7 @@ def main(args, cuda):
     if True:#args.pretrained_model_path:
         print('loading pretrain state dict')
         embedder.load_state_dict(torch.load(args.pretrained_model_path))
+        embedder_latent.load_state_dict(torch.load(args.pretrained_model_path))
         print('successfully loaded pretrain state dict')
 
     pretrained_other_msg = 'pretrained on other data: {}\n'.format(args.pretrained_model_path)
@@ -98,7 +99,7 @@ def main(args, cuda):
 
     # TRAIN
     optimizer = optim.Adam(triplet_net.parameters(), lr=args.lr)
-    args.num_epochs = 500
+    args.num_epochs = 1000
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.num_epochs, 
                                                      eta_min=args.lr*1e-3, last_epoch=- 1, verbose=False)
 

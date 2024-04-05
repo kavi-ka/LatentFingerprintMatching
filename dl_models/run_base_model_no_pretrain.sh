@@ -5,7 +5,7 @@
 
 SD302='/data/therealgabeguo/fingerprint_data/sd302_split'
 
-SD302_latent='/data/albert/302_latent_data_split'
+SD302_latent='/data/albert/302_filtered_latent_data_split'
 SD302_latent_toy='/data/albert/latent_302/latent_8bit_toy'
 
 SD301='/data/therealgabeguo/fingerprint_data/sd301_split'
